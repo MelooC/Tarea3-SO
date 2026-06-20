@@ -47,21 +47,33 @@ static Bloque *buscar_first_fit(Memoria *mem, int size) {
 
 /* Best-Fit: el bloque libre MAS PEQUENO que igual sirva. */
 static Bloque *buscar_best_fit(Memoria *mem, int size) {
-    (void)mem; (void)size;
-    /* TODO (companera): recorrer toda la lista y quedarse con el
-       bloque libre cuyo tam sea >= size y el MENOR posible. */
-    fprintf(stderr, "[TODO] Best-Fit aun no implementado\n");
-    return NULL;
+        Bloque *mejor = NULL;
+    for (Bloque *b = mem->cabeza; b != NULL; b = b->sig) {
+        if (b->libre && b->tam >= size) {
+            //se guarda este su aun no hay candidato o si 
+            //es más pequeño que el mejor actual
+            if (mejor == NULL || b->tam < mejor->tam)
+                mejor = b;
+        }
+    }
+    return mejor;  /* NULL si no hubo ninguno adecuado */
 }
+
 
 /* Worst-Fit: el bloque libre MAS GRANDE disponible. */
 static Bloque *buscar_worst_fit(Memoria *mem, int size) {
-    (void)mem; (void)size;
-    /* TODO (companera): recorrer toda la lista y quedarse con el
-       bloque libre de MAYOR tam (siempre que sea >= size). */
-    fprintf(stderr, "[TODO] Worst-Fit aun no implementado\n");
-    return NULL;
+        Bloque *peor = NULL;
+    for (Bloque *b = mem->cabeza; b != NULL; b = b->sig) {
+        if (b->libre && b->tam >= size) {
+            // se guarda este si aun no hay candidato, o
+            //si es más grande que el peor actual
+            if (peor == NULL || b->tam > peor->tam)
+                peor = b;
+        }
+    }
+    return peor;  /* NULL si no hubo ninguno adecuado */
 }
+
 
 static Bloque *buscar_bloque(Memoria *mem, int size, Estrategia est) {
     switch (est) {
@@ -137,12 +149,70 @@ void liberar(Memoria *mem, int id) {
    compactar (COMPACT): TODO companera.
    ============================================================ */
 void compactar(Memoria *mem) {
-    (void)mem;
-    /* TODO (companera): desplazar todos los bloques ocupados hacia
-       la direccion 0 (sin huecos entre ellos) y dejar TODO el espacio
-       libre consolidado en un unico bloque al final. */
-    fprintf(stderr, "[TODO] COMPACT aun no implementado\n");
+    
+    /* 1. cuanta memoria esta ocupada en total. */
+    int total_ocupado = 0;
+    for (Bloque *b = mem->cabeza; b != NULL; b = b->sig) {
+        if (!b->libre)
+            total_ocupado += b->tam;
+    }
+
+        /* 2. reconstruir la lista desde cero. 
+        recorre la lista y se queda solo con los bloques ocupados, reasignando sus direcciones de inicio de forma contigua desde 0.
+        luego se liberan los nodos que eran libres */
+
+    Bloque *nueva_cabeza = NULL;
+    Bloque *nueva_cola   = NULL;
+    int cursor = 0;   /* direccion de inicio del próximo bloque ocupado */
+ 
+    Bloque *b = mem->cabeza;
+    while (b != NULL) {
+        Bloque *sig = b->sig;
+        if (!b->libre) {
+            /* se reasigna la dirección de inicio y se encadena */
+            b->inicio = cursor;
+            cursor   += b->tam;
+            b->sig    = NULL;
+ 
+            if (nueva_cola == NULL) {
+                nueva_cabeza = b;
+                nueva_cola   = b;
+            } else {
+                nueva_cola->sig = b;
+                nueva_cola      = b;
+            }
+        } else {
+            /* yy descartamos bloque libre (ya estaba reemplazado con
+               un unico bloque libre al final) */
+            free(b);
+        }
+        b = sig;
+    }
+
+
+    /* 3. si queda espacio libre, agregar un unico bloque libre al final */
+    int espacio_libre = mem->tam_total - total_ocupado;
+    if (espacio_libre > 0) {
+        Bloque *libre = malloc(sizeof(Bloque));
+        libre->inicio     = cursor;
+        libre->tam        = espacio_libre;
+        libre->libre      = true;
+        libre->id_proceso = -1;
+        libre->sig        = NULL;
+ 
+        if (nueva_cola == NULL) {
+            /* si no había bloques ocupados, toda la memoria queda libre */
+            nueva_cabeza = libre;
+        } else {
+            nueva_cola->sig = libre;
+        }
+    }
+ 
+    /* 4. si no habia nada ocupado Y no habia espacio libre*/
+    mem->cabeza = nueva_cabeza;
 }
+
+
 
 /* ============================================================
    Salida

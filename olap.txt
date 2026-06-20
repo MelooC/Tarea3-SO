@@ -1,0 +1,6 @@
+holi hice las funciones de 
+
+-best fit 
+-worst fit
+-compact
+-
