@@ -1,8 +1,7 @@
 #include "tipos.h"
 
-/* ============================================================
-   memoria_init: arranca con TODA la memoria como un solo bloque libre.
-   ============================================================ */
+
+// memoria_init: arranca con TODA la memoria como un solo bloque libre.
 Memoria *memoria_init(int N) {
     Memoria *mem = malloc(sizeof(Memoria));
     Bloque  *b   = malloc(sizeof(Bloque));
@@ -30,11 +29,6 @@ void memoria_destruir(Memoria *mem) {
     free(mem);
 }
 
-/* ============================================================
-   Busqueda del bloque a usar, segun la estrategia.
-   Por ahora solo First-Fit esta implementado; Best/Worst son
-   ganchos (stubs) claramente marcados para que los completes.
-   ============================================================ */
 
 /* First-Fit: el PRIMER bloque libre (desde el inicio) con tam >= size. */
 static Bloque *buscar_first_fit(Memoria *mem, int size) {
@@ -84,10 +78,9 @@ static Bloque *buscar_bloque(Memoria *mem, int size, Estrategia est) {
     return NULL;
 }
 
-/* ============================================================
-   asignar (ALLOC): busca un hueco y, si lo encuentra, lo parte
-   en una parte ocupada + el sobrante libre.
-   ============================================================ */
+
+   /*asignar (ALLOC): busca un hueco y, si lo encuentra, lo parte
+     en una parte ocupada + el sobrante libre. */
 bool asignar(Memoria *mem, int id, int size, Estrategia est) {
     if (size <= 0) return false;
 
@@ -113,9 +106,7 @@ bool asignar(Memoria *mem, int id, int size, Estrategia est) {
     return true;
 }
 
-/* ============================================================
-   coalescer: fusiona bloques LIBRES vecinos en uno solo.
-   ============================================================ */
+/* coalescer: fusiona bloques LIBRES vecinos en uno solo.*/
 static void coalescer(Memoria *mem) {
     Bloque *b = mem->cabeza;
     while (b != NULL && b->sig != NULL) {
@@ -124,17 +115,15 @@ static void coalescer(Memoria *mem) {
             b->tam += muerto->tam;      /* el primero absorbe al segundo */
             b->sig  = muerto->sig;
             free(muerto);
-            /* no avanzamos: seguimos fusionando con el nuevo vecino */
+            /* no avanza, sigue fusionando con el nuevo vecino */
         } else {
             b = b->sig;
         }
     }
 }
 
-/* ============================================================
-   liberar (FREE): marca como libres TODOS los bloques del
-   proceso 'id' y luego coalesce.
-   ============================================================ */
+/* liberar (FREE): marca como libres TODOS los bloques del
+   proceso 'id' y luego coalesce. */
 void liberar(Memoria *mem, int id) {
     for (Bloque *b = mem->cabeza; b != NULL; b = b->sig) {
         if (!b->libre && b->id_proceso == id) {
@@ -145,9 +134,7 @@ void liberar(Memoria *mem, int id) {
     coalescer(mem);
 }
 
-/* ============================================================
-   compactar (COMPACT): TODO companera.
-   ============================================================ */
+// compactar (COMPACT): 
 void compactar(Memoria *mem) {
     
     /* 1. cuanta memoria esta ocupada en total. */
@@ -214,9 +201,7 @@ void compactar(Memoria *mem) {
 
 
 
-/* ============================================================
-   Salida
-   ============================================================ */
+// salida
 void imprimir_estado(Memoria *mem) {
     for (Bloque *b = mem->cabeza; b != NULL; b = b->sig) {
         if (b->libre)
